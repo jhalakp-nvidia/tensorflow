@@ -28,7 +28,7 @@ namespace {
 
 class Logger : public nvinfer1::ILogger {
  public:
-  void log(nvinfer1::ILogger::Severity severity, const char* msg) override {
+  void log(nvinfer1::ILogger::Severity severity, const char* msg) noexcept override {
     switch (severity) {
       case Severity::kINFO:
         LOG(INFO) << msg;
@@ -73,7 +73,7 @@ nvinfer1::IHostMemory* CreateNetwork() {
   nvinfer1::INetworkDefinition* network = builder->createNetwork();
   // Add the input.
   auto input = network->addInput(kInputTensor, nvinfer1::DataType::kFLOAT,
-                                 nvinfer1::DimsCHW{1, 1, 1});
+                                 nvinfer1::Dims3{1, 1, 1});
   EXPECT_NE(input, nullptr);
   // Add the hidden layer.
   auto layer = network->addFullyConnected(*input, 1, weights.get(), bias.get());

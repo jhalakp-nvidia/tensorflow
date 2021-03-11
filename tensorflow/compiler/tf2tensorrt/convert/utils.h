@@ -100,7 +100,6 @@ string DebugString(const std::vector<CType>& vector) {
   }
   return StrCat("{", tmp_s.substr(0, tmp_s.length() - 2), "}");
 }
-string DebugString(const nvinfer1::DimensionType type);
 string DebugString(const nvinfer1::Dims& dims);
 string DebugString(const nvinfer1::DataType trt_dtype);
 string DebugString(const TrtPrecisionMode mode);

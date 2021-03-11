@@ -807,8 +807,6 @@ Status TRTEngineOp::ExecuteTrtEngine(
 #endif  // #if IS_TRT_VERSION_GE(6, 0, 0, 0)
     VLOG(2) << "  Activation size: " << cuda_engine->getDeviceMemorySize()
             << " bytes";
-    VLOG(2) << "  Workspace size: " << cuda_engine->getWorkspaceSize()
-            << " bytes";
     VLOG(2) << "  Datatype of " << cuda_engine->getNbBindings()
             << " inputs/outputs";
     string binding_types = "";
