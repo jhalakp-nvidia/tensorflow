@@ -108,7 +108,6 @@ const char* LayerTypeToString(nvinfer1::LayerType layer_type) {
     ADD_LAYER(CONCATENATION)
     ADD_LAYER(ELEMENTWISE)
     ADD_LAYER(PLUGIN)
-    ADD_LAYER(RNN)
     ADD_LAYER(UNARY)
     ADD_LAYER(PADDING)
     ADD_LAYER(SHUFFLE)
@@ -848,61 +847,60 @@ class TRT_TensorOrWeights::SimpleITensor : public nvinfer1::ITensor {
   SimpleITensor(nvinfer1::DataType trt_dtype, const nvinfer1::Dims& trt_dims)
       : trt_dtype_(trt_dtype), trt_dims_(trt_dims) {}
 
-  void setName(const char* name) override {}
+  void setName(const char* name) noexcept override {}
 
-  const char* getName() const override { return ""; }
+  const char* getName() const noexcept override { return ""; }
 
-  void setDimensions(nvinfer1::Dims dimensions) override {
+  void setDimensions(nvinfer1::Dims dimensions) noexcept override {
     trt_dims_ = dimensions;
   }
 
-  nvinfer1::Dims getDimensions() const override { return trt_dims_; }
+  nvinfer1::Dims getDimensions() const noexcept override { return trt_dims_; }
 
-  void setType(nvinfer1::DataType trt_dtype) override {
+  void setType(nvinfer1::DataType trt_dtype) noexcept override {
     trt_dtype_ = trt_dtype;
   }
 
-  nvinfer1::DataType getType() const override { return trt_dtype_; }
+  nvinfer1::DataType getType() const noexcept override { return trt_dtype_; }
 
-  bool isNetworkInput() const override { return false; }
+  bool isNetworkInput() const noexcept override { return false; }
 
-  bool isNetworkOutput() const override { return false; }
+  bool isNetworkOutput() const noexcept override { return false; }
 
-  void setBroadcastAcrossBatch(bool broadcastAcrossBatch) override {}
+  void setBroadcastAcrossBatch(bool broadcastAcrossBatch) noexcept override {}
 
-  bool getBroadcastAcrossBatch() const override { return false; }
+  bool getBroadcastAcrossBatch() const noexcept override { return false; }
 
-  nvinfer1::TensorLocation getLocation() const override {
+  nvinfer1::TensorLocation getLocation() const noexcept override {
     // This is arbitrary, since we don't use it.
     return nvinfer1::TensorLocation::kDEVICE;
   }
 
-  void setLocation(nvinfer1::TensorLocation location) override {}
+  void setLocation(nvinfer1::TensorLocation location) noexcept override {}
 
 #if IS_TRT_VERSION_GE(5, 0, 0, 0)
-  bool setDynamicRange(float min, float max) override { return true; }
+  bool setDynamicRange(float min, float max) noexcept override { return true; }
 
-  float getDynamicRange() const override { return 0; }
 #endif
 
 #if IS_TRT_VERSION_GE(5, 1, 0, 0)
-  bool dynamicRangeIsSet() const override { return true; }
+  bool dynamicRangeIsSet() const noexcept override { return true; }
 
-  void resetDynamicRange() override {}
+  void resetDynamicRange() noexcept override {}
 
-  float getDynamicRangeMin() const override { return 0.f; }
+  float getDynamicRangeMin() const noexcept override { return 0.f; }
 
-  float getDynamicRangeMax() const override { return 0.f; }
+  float getDynamicRangeMax() const noexcept override { return 0.f; }
 #endif
 
 #if IS_TRT_VERSION_GE(6, 0, 0, 0)
-  void setAllowedFormats(nvinfer1::TensorFormats formats) override {}
+  void setAllowedFormats(nvinfer1::TensorFormats formats) noexcept override {}
 
-  nvinfer1::TensorFormats getAllowedFormats() const override { return 1; }
+  nvinfer1::TensorFormats getAllowedFormats() const noexcept override { return 1; }
 
-  bool isShapeTensor() const override { return false; }
+  bool isShapeTensor() const noexcept override { return false; }
 
-  bool isExecutionTensor() const override { return true; }
+  bool isExecutionTensor() const noexcept override { return true; }
 #endif
 
  private:
@@ -1010,16 +1008,17 @@ void Reorder5(const nvinfer1::Dims& shape, const T* idata,
 // TODO(jie): reorder4 & reorder2 should be merged?
 // TODO(aaroey): fix the order of parameters.
 template <typename T>
-void Reorder4(const nvinfer1::DimsNCHW& shape, const T* idata,
-              const nvinfer1::DimsNCHW& istrides, T* odata,
-              const nvinfer1::DimsNCHW& ostrides) {
-  for (int n = 0; n < shape.n(); ++n) {
-    for (int c = 0; c < shape.c(); ++c) {
-      for (int h = 0; h < shape.h(); ++h) {
-        for (int w = 0; w < shape.w(); ++w) {
-          odata[n * ostrides.n() + c * ostrides.c() + h * ostrides.h() +
-                w * ostrides.w()] = idata[n * istrides.n() + c * istrides.c() +
-                                          h * istrides.h() + w * istrides.w()];
+void Reorder4(const nvinfer1::Dims4& shape, const T* idata,
+              const nvinfer1::Dims4& istrides, T* odata,
+              const nvinfer1::Dims4& ostrides) {
+  for (int n = 0; n < shape.d[0]; ++n) {
+    for (int c = 0; c < shape.d[1]; ++c) {
+      for (int h = 0; h < shape.d[2]; ++h) {
+        for (int w = 0; w < shape.d[3]; ++w) {
+          odata[n * ostrides.d[0] + c * ostrides.d[1] + h * ostrides.d[2] +
+                w * ostrides.d[4]] = idata[n * istrides.d[0] + c * istrides.d[1] +
+                                          h * istrides.d[2] + w * istrides.d[3]];
+
         }
       }
     }
@@ -1084,8 +1083,8 @@ void ReorderRSCKToKCRS(const TRT_ShapedWeights& iweights,
   oweights->shape_.d[1] = c * num_groups;
   oweights->shape_.d[2] = r;
   oweights->shape_.d[3] = s;
-  const nvinfer1::DimsNCHW istrides = {1, k, s * k * c, c * k};
-  const nvinfer1::DimsNCHW ostrides = {c * r * s, r * s, s, 1};
+  const nvinfer1::Dims4 istrides = {1, k, s * k * c, c * k};
+  const nvinfer1::Dims4 ostrides = {c * r * s, r * s, s, 1};
   switch (iweights.TrtDType()) {
     case nvinfer1::DataType::kFLOAT: {
       Reorder4({k, c, r, s}, static_cast<float const*>(iweights.GetValues()),
@@ -1510,7 +1509,7 @@ class StaticAlgorithmSelector : public nvinfer1::IAlgorithmSelector {
   // Returns value in [0, nbChoices] for a valid algorithm.
   int32_t selectAlgorithms(const nvinfer1::IAlgorithmContext& algoContext,
                            const nvinfer1::IAlgorithm* const* algoChoices,
-                           int32_t nbChoices, int32_t* selection) override {
+                           int32_t nbChoices, int32_t* selection) noexcept override {
     // TensorRT always provides more than zero number of algorithms
     // in selectAlgorithms.
     assert(nbChoices > 0);
@@ -1524,7 +1523,7 @@ class StaticAlgorithmSelector : public nvinfer1::IAlgorithmSelector {
   // Called by TensorRT to report choices it made.
   void reportAlgorithms(const nvinfer1::IAlgorithmContext* const* algoContexts,
                         const nvinfer1::IAlgorithm* const* algoChoices,
-                        int32_t nbAlgorithms) override {}  // do nothing
+                        int32_t nbAlgorithms) noexcept override {}  // do nothing
 };
 #endif
 
@@ -1719,8 +1718,6 @@ Status Converter::TransposeTensor(nvinfer1::ITensor* input_tensor,
   reshape_dims.nbDims = dims.nbDims;
   for (int32_t i = 0; i < reshape_dims.nbDims; ++i) {
     reshape_dims.d[i] = 0;
-    // TODO(aaroey): why not transposing the types as well?
-    reshape_dims.type[i] = dims.type[i];
   }
   layer->setReshapeDimensions(reshape_dims);
 
@@ -4467,7 +4464,6 @@ void GetTensorDimsWithProtoShape(const Tensor& tensor, nvinfer1::Dims* dims) {
 #endif
     // No dimension provided. Flatten it.
     dims->d[0] = tensor.NumElements();
-    dims->type[0] = nvinfer1::DimensionType::kSPATIAL;
     for (int i = 1; i < nvinfer1::Dims::MAX_DIMS; ++i) {
       dims->d[i] = 0;
     }
@@ -6063,7 +6059,7 @@ Status ConvertDepthSpaceShuffle(OpConverterParams* params) {
     transpose_perm = {2, 3, 0, 4, 1};
     // Second Reshape [C/(r*r), H, r, W, r] -> [C/(r*r), H * r, W * r]
     second_shuffle_shape =
-        nvinfer1::DimsCHW(num_channels / (block_size * block_size),
+        nvinfer1::Dims3(num_channels / (block_size * block_size),
                           h * block_size, w * block_size);
   } else if (node_def.op() == "SpaceToDepth") {
     if (h % block_size != 0 || w % block_size != 0) {
@@ -6078,7 +6074,7 @@ Status ConvertDepthSpaceShuffle(OpConverterParams* params) {
     // Transpose [C, H/r, r, W/r, r] -> [r, r, C, H/r, W/r]
     transpose_perm = {2, 4, 0, 1, 3};
     // Second Reshape  [r, r, C, H/r, W/r] -> [C*r*r, H/r, W/r]
-    second_shuffle_shape = nvinfer1::DimsCHW(
+    second_shuffle_shape = nvinfer1::Dims3(
         num_channels * block_size * block_size, h / block_size, w / block_size);
   }
   if (params->validation_only) return Status::OK();

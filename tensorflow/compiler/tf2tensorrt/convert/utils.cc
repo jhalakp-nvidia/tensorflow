@@ -56,27 +56,12 @@ Status TrtPrecisionModeFromName(const string& name, TrtPrecisionMode* mode) {
 
 #if GOOGLE_CUDA && GOOGLE_TENSORRT
 
-string DebugString(const nvinfer1::DimensionType type) {
-  switch (type) {
-    case nvinfer1::DimensionType::kSPATIAL:
-      return "kSPATIAL";
-    case nvinfer1::DimensionType::kCHANNEL:
-      return "kCHANNEL";
-    case nvinfer1::DimensionType::kINDEX:
-      return "kINDEX";
-    case nvinfer1::DimensionType::kSEQUENCE:
-      return "kSEQUENCE";
-    default:
-      return StrCat(static_cast<int>(type), "=unknown");
-  }
-}
-
 string DebugString(const nvinfer1::Dims& dims) {
   string out = StrCat("nvinfer1::Dims(nbDims=", dims.nbDims, ", d=");
   for (int i = 0; i < dims.nbDims; ++i) {
     StrAppend(&out, dims.d[i]);
     if (VLOG_IS_ON(2)) {
-      StrAppend(&out, "[", DebugString(dims.type[i]), "],");
+      StrAppend(&out, ",");
     } else {
       StrAppend(&out, ",");
     }

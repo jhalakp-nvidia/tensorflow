@@ -335,58 +335,58 @@ class FakeITensor : public nvinfer1::ITensor {
   FakeITensor(const std::vector<int>& dims)
       : dims_(GetTestDims(dims)), dynamic_range_(0.0f) {}
 
-  void setName(const char* name) override { name_ = name; }
+  void setName(const char* name) noexcept override { name_ = name; }
 
-  const char* getName() const override { return name_.c_str(); }
+  const char* getName() const noexcept override { return name_.c_str(); }
 
-  void setDimensions(nvinfer1::Dims dimensions) override { dims_ = dimensions; }
+  void setDimensions(nvinfer1::Dims dimensions) noexcept override { dims_ = dimensions; }
 
-  nvinfer1::Dims getDimensions() const override { return dims_; }
+  nvinfer1::Dims getDimensions() const noexcept override { return dims_; }
 
-  void setType(nvinfer1::DataType type) override { type_ = type; }
+  void setType(nvinfer1::DataType type) noexcept override { type_ = type; }
 
-  nvinfer1::DataType getType() const override { return type_; }
+  nvinfer1::DataType getType() const noexcept override { return type_; }
 
-  bool isNetworkInput() const override { return false; }
+  bool isNetworkInput() const noexcept override { return false; }
 
-  bool isNetworkOutput() const override { return false; }
+  bool isNetworkOutput() const noexcept override { return false; }
 
-  void setBroadcastAcrossBatch(bool broadcastAcrossBatch) override {}
+  void setBroadcastAcrossBatch(bool broadcastAcrossBatch) noexcept override {}
 
-  bool getBroadcastAcrossBatch() const override { return false; }
+  bool getBroadcastAcrossBatch() const noexcept override { return false; }
 
-  nvinfer1::TensorLocation getLocation() const override { return location_; }
+  nvinfer1::TensorLocation getLocation() const noexcept override { return location_; }
 
-  void setLocation(nvinfer1::TensorLocation location) override {
+  void setLocation(nvinfer1::TensorLocation location) noexcept override {
     location_ = location;
   }
 
 #if IS_TRT_VERSION_GE(5, 0, 0, 0)
-  bool setDynamicRange(float min, float max) override {
+  bool setDynamicRange(float min, float max) noexcept override {
     dynamic_range_ = std::max(std::abs(min), std::abs(max));
     return true;
   }
 
-  float getDynamicRange() const override { return dynamic_range_; }
+  float getDynamicRange() const noexcept override { return dynamic_range_; }
 #endif
 
 #if IS_TRT_VERSION_GE(5, 1, 0, 0)
-  bool dynamicRangeIsSet() const override { return true; }
+  bool dynamicRangeIsSet() const noexcept override { return true; }
 
-  void resetDynamicRange() override {}
+  void resetDynamicRange() noexcept override {}
 
-  float getDynamicRangeMin() const override { return 0.f; }
+  float getDynamicRangeMin() const noexcept override { return 0.f; }
 
-  float getDynamicRangeMax() const override { return 0.f; }
+  float getDynamicRangeMax() const noexcept override { return 0.f; }
 #endif
 
 #if IS_TRT_VERSION_GE(6, 0, 0, 0)
-  void setAllowedFormats(nvinfer1::TensorFormats formats) override {}
+  void setAllowedFormats(nvinfer1::TensorFormats formats) noexcept override {}
 
-  nvinfer1::TensorFormats getAllowedFormats() const override { return 1; }
+  nvinfer1::TensorFormats getAllowedFormats() const noexcept override { return 1; }
 
-  bool isShapeTensor() const override { return false; }
-  bool isExecutionTensor() const override { return true; }
+  bool isShapeTensor() const noexcept override { return false; }
+  bool isExecutionTensor() const noexcept override { return true; }
 
 #endif
 
@@ -1361,7 +1361,7 @@ class OpConverterTest : public ::testing::Test {
     Reset();
   }
 
-  ~OpConverterTest() override { QCHECK_EQ(0, cudaStreamDestroy(stream_)); }
+  ~OpConverterTest() noexcept override { QCHECK_EQ(0, cudaStreamDestroy(stream_)); }
 
   Status GetTensorOrWeights(const string& name, TRT_TensorOrWeights* output) {
     return converter_->GetTensorOrWeights(name, output);
